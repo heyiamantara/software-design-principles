@@ -1184,7 +1184,3 @@ public class NotificationService {                         // SRP: orchestrates 
 ---
 
 > 💡 **Final Thought:** These principles exist to serve you — not to be followed blindly. The goal is **clean, maintainable, understandable code** that solves real problems. Apply these principles with judgment, and they will serve you well throughout your entire software engineering career.
-
----
-
-*Written with ❤️ for Java developers who care about code quality.*
