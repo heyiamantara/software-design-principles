@@ -1,737 +1,686 @@
-# 🏗️ Software Design Principles: SOLID, DRY, KISS & YAGNI
-
-> A comprehensive guide with real-world code comparisons, theory, and practical examples.
+# SOLID Principles & Software Design Principles
+### A Comprehensive Guide with Java Examples
 
 ---
 
-## 📚 Table of Contents
+## Table of Contents
 
-1. [Why Design Principles Matter](#why-design-principles-matter)
+1. [Introduction](#introduction)
 2. [SOLID Principles](#solid-principles)
-   - [S — Single Responsibility Principle (SRP)](#s--single-responsibility-principle-srp)
-   - [O — Open/Closed Principle (OCP)](#o--openclosed-principle-ocp)
-   - [L — Liskov Substitution Principle (LSP)](#l--liskov-substitution-principle-lsp)
-   - [I — Interface Segregation Principle (ISP)](#i--interface-segregation-principle-isp)
-   - [D — Dependency Inversion Principle (DIP)](#d--dependency-inversion-principle-dip)
-3. [DRY — Don't Repeat Yourself](#dry--dont-repeat-yourself)
-4. [KISS — Keep It Simple, Stupid](#kiss--keep-it-simple-stupid)
-5. [YAGNI — You Aren't Gonna Need It](#yagni--you-arent-gonna-need-it)
-6. [Principles Working Together](#principles-working-together)
-7. [Quick Reference Cheat Sheet](#quick-reference-cheat-sheet)
+   - [S — Single Responsibility Principle (SRP)](#1-single-responsibility-principle-srp)
+   - [O — Open/Closed Principle (OCP)](#2-openclosed-principle-ocp)
+   - [L — Liskov Substitution Principle (LSP)](#3-liskov-substitution-principle-lsp)
+   - [I — Interface Segregation Principle (ISP)](#4-interface-segregation-principle-isp)
+   - [D — Dependency Inversion Principle (DIP)](#5-dependency-inversion-principle-dip)
+3. [Software Design Principles](#software-design-principles)
+   - [DRY — Don't Repeat Yourself](#dry--dont-repeat-yourself)
+   - [KISS — Keep It Simple, Stupid](#kiss--keep-it-simple-stupid)
+   - [YAGNI — You Aren't Gonna Need It](#yagni--you-arent-gonna-need-it)
+4. [How These Principles Work Together](#how-these-principles-work-together)
+5. [Summary Cheat Sheet](#summary-cheat-sheet)
 
 ---
 
-## Why Design Principles Matter
+## Introduction
 
-Software design principles are **battle-tested guidelines** that help developers write code that is:
+Writing code that works is not enough. Professional software engineers write code that is **readable**, **maintainable**, **scalable**, and **testable**. These goals are achieved by following well-established design principles.
 
-- **Maintainable** — Easy to change without breaking other things
-- **Readable** — Understandable by other developers (including your future self)
-- **Testable** — Components can be tested in isolation
-- **Scalable** — Can grow without becoming a tangled mess
-- **Reusable** — Logic can be shared across the codebase
+This guide covers:
+- **SOLID** — Five object-oriented design principles introduced by Robert C. Martin (Uncle Bob)
+- **DRY** — Avoid duplication
+- **KISS** — Avoid unnecessary complexity
+- **YAGNI** — Avoid speculative features
 
-Without design principles, codebases become what developers call **"Big Ball of Mud"** — a sprawling, spaghetti-like structure where no one dares to change anything. These principles are not rules to follow blindly; they are lenses to evaluate your code quality.
+> 💡 These principles are not strict rules — they are **guidelines** that help you make better design decisions.
 
 ---
 
 ## SOLID Principles
 
-**SOLID** is an acronym coined by Robert C. Martin (Uncle Bob). Each letter represents a principle that — when followed together — leads to software that is modular, flexible, and robust.
+The acronym **SOLID** stands for:
 
 | Letter | Principle | Core Idea |
 |--------|-----------|-----------|
 | **S** | Single Responsibility | A class should have only one reason to change |
 | **O** | Open/Closed | Open for extension, closed for modification |
 | **L** | Liskov Substitution | Subtypes must be substitutable for their base types |
-| **I** | Interface Segregation | Clients shouldn't depend on interfaces they don't use |
+| **I** | Interface Segregation | Don't force clients to depend on interfaces they don't use |
 | **D** | Dependency Inversion | Depend on abstractions, not concretions |
 
 ---
 
-## S — Single Responsibility Principle (SRP)
+## 1. Single Responsibility Principle (SRP)
 
 ### Theory
 
-> *"A class should have one, and only one, reason to change."*
+> **"A class should have one, and only one, reason to change."**
 > — Robert C. Martin
 
-A **"reason to change"** maps directly to a **responsibility**. If a class handles user authentication AND sends emails AND logs activity, then it has three reasons to change:
-- Business logic around authentication changes
-- Email templates change
-- Logging format changes
+A class should be focused on doing **one thing** and doing it well. When a class has multiple responsibilities, a change in one responsibility can unintentionally break another.
 
-Every one of these changes forces you to open the same class, increasing the risk of introducing bugs and making the class harder to understand and test.
+**Why it matters:**
+- Reduces coupling between unrelated concerns
+- Makes code easier to understand and test
+- Isolates the impact of changes
+- Enables better code reuse
 
-**Key Insight:** SRP is about **cohesion**. Code that belongs together stays together; code that doesn't, gets separated. A class should represent a single concept in your domain.
+**Signs of SRP violation:**
+- A class name contains "And" (e.g., `UserManagerAndLogger`)
+- A class has methods that operate on completely different domains
+- A single change requires modifying the same class for multiple reasons
+
+---
 
 ### ❌ Bad Example — Violating SRP
 
-```python
-class User:
-    def __init__(self, name: str, email: str):
-        self.name = name
-        self.email = email
+```java
+// This class has THREE responsibilities:
+// 1. Managing user data
+// 2. Saving to database
+// 3. Sending email notifications
+public class UserService {
 
-    def get_user_data(self):
-        """Responsibility 1: Managing user data"""
-        return {"name": self.name, "email": self.email}
+    public void createUser(String name, String email) {
+        // Responsibility 1: Business logic
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
 
-    def save_to_database(self):
-        """Responsibility 2: Persistence — belongs in a repository/DAO"""
-        import sqlite3
-        conn = sqlite3.connect("users.db")
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO users (name, email) VALUES (?, ?)",
-            (self.name, self.email)
-        )
-        conn.commit()
-        conn.close()
-        print(f"User {self.name} saved to database.")
+        // Responsibility 2: Database logic
+        String sql = "INSERT INTO users (name, email) VALUES ('" + name + "', '" + email + "')";
+        System.out.println("Executing SQL: " + sql); // Simulated DB call
 
-    def send_welcome_email(self):
-        """Responsibility 3: Email communication — belongs in a mailer service"""
-        import smtplib
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.sendmail(
-            "app@example.com",
-            self.email,
-            f"Welcome, {self.name}!"
-        )
-        server.quit()
-        print(f"Welcome email sent to {self.email}.")
+        // Responsibility 3: Email notification logic
+        String emailBody = "Welcome, " + name + "! Your account has been created.";
+        System.out.println("Sending email to " + email + ": " + emailBody);
+    }
 
-    def generate_report(self):
-        """Responsibility 4: Reporting — belongs in a report service"""
-        report = f"User Report:\nName: {self.name}\nEmail: {self.email}"
-        with open("user_report.txt", "w") as f:
-            f.write(report)
-        print("Report generated.")
+    public void deleteUser(int userId) {
+        // Responsibility 2: Database logic
+        String sql = "DELETE FROM users WHERE id = " + userId;
+        System.out.println("Executing SQL: " + sql);
+
+        // Responsibility 3: Email notification logic
+        System.out.println("Sending account deletion email to user " + userId);
+    }
+}
 ```
 
 **Problems:**
-- The `User` class has 4 different reasons to change
-- Testing `get_user_data()` requires mocking a database AND an SMTP server
-- Changing the database from SQLite to PostgreSQL forces you to edit the `User` class
-- Hard to reuse the email logic for other entities (e.g., sending emails to admins)
+- If the email provider changes, you have to modify `UserService`
+- If the DB schema changes, you have to modify `UserService`
+- You can't test business logic without the DB and email logic interfering
+- The class grows endlessly as the application scales
+
+---
 
 ### ✅ Good Example — Following SRP
 
-```python
-# Responsibility 1: Pure data/domain model
-class User:
-    def __init__(self, name: str, email: str):
-        self.name = name
-        self.email = email
+```java
+// Responsibility 1: Business logic only
+public class UserService {
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    def get_data(self) -> dict:
-        return {"name": self.name, "email": self.email}
+    public UserService(UserRepository userRepository, EmailService emailService) {
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+    }
 
+    public void createUser(String name, String email) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be empty");
+        }
+        userRepository.save(name, email);
+        emailService.sendWelcomeEmail(email, name);
+    }
 
-# Responsibility 2: Persistence
-class UserRepository:
-    def __init__(self, db_connection):
-        self.db = db_connection
+    public void deleteUser(int userId) {
+        userRepository.delete(userId);
+    }
+}
 
-    def save(self, user: User):
-        self.db.execute(
-            "INSERT INTO users (name, email) VALUES (?, ?)",
-            (user.name, user.email)
-        )
-        self.db.commit()
-        print(f"User {user.name} saved.")
+// Responsibility 2: Database operations only
+public class UserRepository {
+    public void save(String name, String email) {
+        String sql = "INSERT INTO users (name, email) VALUES ('" + name + "', '" + email + "')";
+        System.out.println("Executing SQL: " + sql);
+    }
 
+    public void delete(int userId) {
+        String sql = "DELETE FROM users WHERE id = " + userId;
+        System.out.println("Executing SQL: " + sql);
+    }
+}
 
-# Responsibility 3: Email communication
-class EmailService:
-    def __init__(self, smtp_client):
-        self.smtp = smtp_client
+// Responsibility 3: Email communication only
+public class EmailService {
+    public void sendWelcomeEmail(String email, String name) {
+        String body = "Welcome, " + name + "! Your account has been created.";
+        System.out.println("Sending email to " + email + ": " + body);
+    }
 
-    def send_welcome_email(self, user: User):
-        message = f"Welcome, {user.name}!"
-        self.smtp.sendmail("app@example.com", user.email, message)
-        print(f"Welcome email sent to {user.email}.")
-
-
-# Responsibility 4: Reporting
-class UserReportGenerator:
-    def generate(self, user: User) -> str:
-        return f"User Report:\nName: {user.name}\nEmail: {user.email}"
-
-    def save_to_file(self, user: User, filepath: str):
-        report = self.generate(user)
-        with open(filepath, "w") as f:
-            f.write(report)
-        print(f"Report saved to {filepath}.")
-
-
-# --- Usage ---
-user = User("Alice", "alice@example.com")
-
-repo = UserRepository(db_connection=get_db())
-repo.save(user)
-
-mailer = EmailService(smtp_client=get_smtp())
-mailer.send_welcome_email(user)
-
-reporter = UserReportGenerator()
-reporter.save_to_file(user, "alice_report.txt")
+    public void sendDeletionEmail(String email) {
+        System.out.println("Sending deletion confirmation to " + email);
+    }
+}
 ```
 
 **Benefits:**
-- Each class has one job and one reason to change
-- `UserRepository` can be swapped (SQLite → PostgreSQL) without touching `User`
-- `EmailService` can be tested with a mock SMTP client
-- `UserReportGenerator` can be used for any entity, not just `User`
+- Each class has exactly **one reason to change**
+- You can swap the email provider by only modifying `EmailService`
+- You can change the DB by only modifying `UserRepository`
+- Each class is independently testable
 
 ---
 
-## O — Open/Closed Principle (OCP)
+## 2. Open/Closed Principle (OCP)
 
 ### Theory
 
-> *"Software entities (classes, modules, functions) should be open for extension, but closed for modification."*
+> **"Software entities should be open for extension, but closed for modification."**
 > — Bertrand Meyer, popularized by Robert C. Martin
 
-**Open for extension** means you can add new behaviors.
-**Closed for modification** means you don't change existing, tested code to do so.
+A class should be designed so that new behavior can be **added without changing existing code**. This is typically achieved through **abstraction**, **interfaces**, and **polymorphism**.
 
-The mechanism that enables OCP is **abstraction** — interfaces, abstract classes, or polymorphism. By coding to an abstraction rather than a concrete class, you can plug in new implementations without touching the code that uses them.
+**Why it matters:**
+- Existing, tested code is not broken when adding new features
+- Reduces the risk of introducing bugs in stable code
+- Encourages thinking in abstractions
+- Makes the system naturally extensible
 
-**Why it matters:** Every time you modify working code, you risk introducing regressions. If you can *extend* behavior without modifying it, your existing tests remain valid and your risk stays low.
+**Signs of OCP violation:**
+- Adding a new feature requires modifying an existing class's core logic
+- Long `if-else` or `switch` chains that grow with every new type
+
+---
 
 ### ❌ Bad Example — Violating OCP
 
-```python
-class DiscountCalculator:
-    def calculate(self, order, customer_type: str) -> float:
-        """
-        Every time a new customer type is introduced, this method must be
-        modified. This is a classic OCP violation.
-        """
-        if customer_type == "regular":
-            return order.total * 0.0   # No discount
+```java
+public class DiscountCalculator {
 
-        elif customer_type == "premium":
-            return order.total * 0.10  # 10% discount
-
-        elif customer_type == "vip":
-            return order.total * 0.20  # 20% discount
-
-        # What happens when we add "employee" or "student"?
-        # We MUST come back and edit this class!
-        else:
-            raise ValueError(f"Unknown customer type: {customer_type}")
+    // Every time a new customer type is added,
+    // we must modify this existing method — VIOLATION!
+    public double calculateDiscount(String customerType, double amount) {
+        if (customerType.equals("REGULAR")) {
+            return amount * 0.05;
+        } else if (customerType.equals("PREMIUM")) {
+            return amount * 0.10;
+        } else if (customerType.equals("VIP")) {
+            return amount * 0.20;
+        }
+        // Adding "STUDENT" requires touching this class again and again!
+        return 0;
+    }
+}
 ```
 
-**Problems:**
-- Adding a new customer type requires modifying this class
-- Each modification risks breaking the `regular`, `premium`, and `vip` logic
-- The `if/elif` chain grows endlessly as requirements grow
-- Unit tests for existing discounts need to be re-run after every addition
+---
 
 ### ✅ Good Example — Following OCP
 
-```python
-from abc import ABC, abstractmethod
+```java
+// Abstraction: Define the contract
+public interface DiscountStrategy {
+    double calculate(double amount);
+}
 
-# The abstraction — this never changes
-class DiscountStrategy(ABC):
-    @abstractmethod
-    def get_discount(self, order_total: float) -> float:
-        pass
+// Extension point 1
+public class RegularDiscount implements DiscountStrategy {
+    @Override
+    public double calculate(double amount) {
+        return amount * 0.05;
+    }
+}
 
+// Extension point 2
+public class PremiumDiscount implements DiscountStrategy {
+    @Override
+    public double calculate(double amount) {
+        return amount * 0.10;
+    }
+}
 
-# Concrete implementations — we ADD these without modifying others
-class NoDiscount(DiscountStrategy):
-    def get_discount(self, order_total: float) -> float:
-        return 0.0
+// Extension point 3
+public class VIPDiscount implements DiscountStrategy {
+    @Override
+    public double calculate(double amount) {
+        return amount * 0.20;
+    }
+}
 
+// Adding a new type: NO modification to existing classes!
+public class StudentDiscount implements DiscountStrategy {
+    @Override
+    public double calculate(double amount) {
+        return amount * 0.15;
+    }
+}
 
-class PremiumDiscount(DiscountStrategy):
-    def get_discount(self, order_total: float) -> float:
-        return order_total * 0.10
+// Closed for modification: This class never needs to change
+public class DiscountCalculator {
+    private final DiscountStrategy strategy;
 
+    public DiscountCalculator(DiscountStrategy strategy) {
+        this.strategy = strategy;
+    }
 
-class VIPDiscount(DiscountStrategy):
-    def get_discount(self, order_total: float) -> float:
-        return order_total * 0.20
+    public double calculateDiscount(double amount) {
+        return strategy.calculate(amount);
+    }
+}
 
+// Usage
+public class Main {
+    public static void main(String[] args) {
+        DiscountCalculator calc = new DiscountCalculator(new VIPDiscount());
+        System.out.println("VIP Discount: " + calc.calculateDiscount(1000)); // 200.0
 
-# New requirement: Employee discount — just ADD a new class, touch nothing else!
-class EmployeeDiscount(DiscountStrategy):
-    def get_discount(self, order_total: float) -> float:
-        return order_total * 0.35
-
-
-# Student discount — same story
-class StudentDiscount(DiscountStrategy):
-    def get_discount(self, order_total: float) -> float:
-        return order_total * 0.15
-
-
-# The calculator is CLOSED for modification
-class DiscountCalculator:
-    def __init__(self, strategy: DiscountStrategy):
-        self.strategy = strategy
-
-    def calculate(self, order_total: float) -> float:
-        return self.strategy.get_discount(order_total)
-
-
-# --- Usage ---
-order_total = 200.0
-
-regular_calc = DiscountCalculator(NoDiscount())
-print(regular_calc.calculate(order_total))    # 0.0
-
-premium_calc = DiscountCalculator(PremiumDiscount())
-print(premium_calc.calculate(order_total))   # 20.0
-
-employee_calc = DiscountCalculator(EmployeeDiscount())
-print(employee_calc.calculate(order_total))  # 70.0
+        // Easily swap strategies
+        DiscountCalculator studentCalc = new DiscountCalculator(new StudentDiscount());
+        System.out.println("Student Discount: " + studentCalc.calculateDiscount(1000)); // 150.0
+    }
+}
 ```
-
-**Benefits:**
-- Adding `StudentDiscount` required zero changes to `DiscountCalculator` or existing strategies
-- All existing tests remain valid when you add a new strategy
-- The `DiscountCalculator` class is stable and never needs to change
 
 ---
 
-## L — Liskov Substitution Principle (LSP)
+## 3. Liskov Substitution Principle (LSP)
 
 ### Theory
 
-> *"If S is a subtype of T, then objects of type T may be replaced with objects of type S without altering any of the desirable properties of the program."*
+> **"Objects of a superclass should be replaceable with objects of its subclasses without breaking the application."**
 > — Barbara Liskov, 1987
 
-In plain English: **any child class should be usable wherever its parent class is expected, without breaking anything.**
+If `S` is a subtype of `T`, then objects of type `T` may be replaced with objects of type `S` **without altering any of the desirable properties of the program**.
 
-LSP is about **behavioral correctness** in inheritance. A subclass shouldn't:
-- Throw exceptions the base class doesn't throw
-- Accept a narrower range of inputs
-- Return a narrower range of outputs
-- Weaken postconditions or strengthen preconditions
+In simpler terms: **a child class should be able to do everything its parent can do**, and should not weaken the contract of the parent.
 
-If you have to use `isinstance()` checks to figure out which subclass you're dealing with, that's often a sign of an LSP violation.
+**Why it matters:**
+- Guarantees the correctness of polymorphism
+- Prevents unexpected behavior when using base class references
+- Builds trust in inheritance hierarchies
+- Makes code predictable and reliable
+
+**Signs of LSP violation:**
+- Subclass overrides a method by throwing `UnsupportedOperationException`
+- Subclass narrows the behavior of a parent method
+- Code checks `instanceof` before calling a method
+
+---
 
 ### ❌ Bad Example — Violating LSP
 
-```python
-class Rectangle:
-    def __init__(self, width: float, height: float):
-        self._width = width
-        self._height = height
+```java
+public class Rectangle {
+    protected int width;
+    protected int height;
 
-    def set_width(self, width: float):
-        self._width = width
+    public void setWidth(int width) {
+        this.width = width;
+    }
 
-    def set_height(self, height: float):
-        self._height = height
+    public void setHeight(int height) {
+        this.height = height;
+    }
 
-    def area(self) -> float:
-        return self._width * self._height
+    public int getArea() {
+        return width * height;
+    }
+}
 
+// A Square "is-a" Rectangle? Seems logical... but it breaks LSP!
+public class Square extends Rectangle {
 
-class Square(Rectangle):
-    """
-    A Square IS-A Rectangle mathematically, but this inheritance
-    breaks LSP because a Square's width and height are always equal.
-    """
-    def set_width(self, width: float):
-        # A square must keep width == height
-        self._width = width
-        self._height = width  # ← This side effect breaks LSP!
+    @Override
+    public void setWidth(int width) {
+        // A square must keep width == height
+        this.width = width;
+        this.height = width; // Side effect! Violates parent's contract
+    }
 
-    def set_height(self, height: float):
-        self._width = height   # ← Same problem
-        self._height = height
+    @Override
+    public void setHeight(int height) {
+        this.width = height; // Side effect!
+        this.height = height;
+    }
+}
 
-
-# This function works perfectly for Rectangle...
-def double_width(shape: Rectangle):
-    original_height = shape._height
-    shape.set_width(shape._width * 2)
-    # We expect: area = (width * 2) * original_height
-    assert shape.area() == shape._width * original_height, "Area calculation is wrong!"
-
-rect = Rectangle(4, 5)
-double_width(rect)  # ✅ Works fine: area = 8 * 5 = 40
-
-square = Square(4, 4)
-double_width(square)  # ❌ FAILS! set_width also changes height, so area = 8 * 8 = 64, not 8 * 4
+// This test passes for Rectangle, but FAILS for Square!
+public class LSPViolationTest {
+    public static void testRectangle(Rectangle r) {
+        r.setWidth(5);
+        r.setHeight(4);
+        // Expected area = 20, but for Square: 4*4 = 16 — WRONG!
+        System.out.println("Area: " + r.getArea()); // Fails for Square
+    }
+}
 ```
 
-**The problem:** A `Square` cannot be substituted for a `Rectangle` without breaking the program's expected behavior. The mathematical "IS-A" relationship doesn't always translate to an inheritance relationship in code.
+---
 
 ### ✅ Good Example — Following LSP
 
-```python
-from abc import ABC, abstractmethod
+```java
+// Common abstraction — no broken contracts
+public interface Shape {
+    int getArea();
+}
 
-# Use a common abstraction instead of a broken inheritance chain
-class Shape(ABC):
-    @abstractmethod
-    def area(self) -> float:
-        pass
+public class Rectangle implements Shape {
+    private final int width;
+    private final int height;
 
-    @abstractmethod
-    def perimeter(self) -> float:
-        pass
+    public Rectangle(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
 
+    @Override
+    public int getArea() {
+        return width * height;
+    }
+}
 
-class Rectangle(Shape):
-    def __init__(self, width: float, height: float):
-        self.width = width
-        self.height = height
+public class Square implements Shape {
+    private final int side;
 
-    def area(self) -> float:
-        return self.width * self.height
+    public Square(int side) {
+        this.side = side;
+    }
 
-    def perimeter(self) -> float:
-        return 2 * (self.width + self.height)
+    @Override
+    public int getArea() {
+        return side * side;
+    }
+}
 
+// Now both can be used interchangeably via the Shape interface
+public class AreaPrinter {
+    public static void printArea(Shape shape) {
+        System.out.println("Area: " + shape.getArea()); // Always correct!
+    }
 
-class Square(Shape):
-    def __init__(self, side: float):
-        self.side = side
-
-    def area(self) -> float:
-        return self.side ** 2
-
-    def perimeter(self) -> float:
-        return 4 * self.side
-
-
-# This function accepts ANY Shape and works correctly for ALL of them
-def print_shape_info(shape: Shape):
-    print(f"Area: {shape.area()}, Perimeter: {shape.perimeter()}")
-
-shapes = [Rectangle(4, 5), Square(4), Rectangle(3, 7)]
-for shape in shapes:
-    print_shape_info(shape)   # ✅ Works correctly for all shapes
+    public static void main(String[] args) {
+        printArea(new Rectangle(5, 4)); // Area: 20
+        printArea(new Square(4));       // Area: 16 — correct for a square!
+    }
+}
 ```
 
-**Benefits:**
-- `Square` and `Rectangle` each manage their own invariants cleanly
-- Any `Shape` subtype can replace any other `Shape` in `print_shape_info`
-- No unexpected side effects from method calls
+**Another Classic LSP Example — Birds:**
+
+```java
+// BAD: Penguin can't fly, but it's forced to inherit fly()
+public class Bird {
+    public void fly() {
+        System.out.println("Flying...");
+    }
+}
+public class Penguin extends Bird {
+    @Override
+    public void fly() {
+        throw new UnsupportedOperationException("Penguins can't fly!"); // LSP broken!
+    }
+}
+
+// GOOD: Segregate behaviors properly
+public interface Bird {
+    void eat();
+    void sleep();
+}
+
+public interface FlyingBird extends Bird {
+    void fly();
+}
+
+public class Eagle implements FlyingBird {
+    public void fly()   { System.out.println("Eagle soaring..."); }
+    public void eat()   { System.out.println("Eagle eating..."); }
+    public void sleep() { System.out.println("Eagle sleeping..."); }
+}
+
+public class Penguin implements Bird {
+    public void eat()   { System.out.println("Penguin eating fish..."); }
+    public void sleep() { System.out.println("Penguin sleeping..."); }
+    // No fly() — correct! Penguin doesn't need it.
+}
+```
 
 ---
 
-## I — Interface Segregation Principle (ISP)
+## 4. Interface Segregation Principle (ISP)
 
 ### Theory
 
-> *"Clients should not be forced to depend on interfaces they do not use."*
+> **"A client should not be forced to depend on interfaces it does not use."**
 > — Robert C. Martin
 
-A **"fat interface"** is an interface with too many methods. When a class implements it, it may be forced to implement methods that are irrelevant to it, often leading to empty implementations or exceptions being thrown — which is a smell.
+Large, fat interfaces force implementing classes to provide implementations for methods they don't need. Instead, interfaces should be **small, focused, and cohesive** — clients should only know about the methods that are relevant to them.
 
-ISP says: **split large interfaces into smaller, more focused ones**. Clients then depend only on the slice they need.
+**Why it matters:**
+- Prevents implementing classes from carrying unnecessary method baggage
+- Reduces the impact of interface changes
+- Produces leaner, more focused abstractions
+- Naturally aligns with SRP at the interface level
 
-**Key Insight:** ISP is the interface-level equivalent of SRP. Instead of one giant interface, prefer several small, cohesive ones. A class can implement multiple small interfaces if it genuinely supports all those behaviors.
+**Signs of ISP violation:**
+- Classes implement an interface but leave some methods empty or throw exceptions
+- An interface name is very generic (e.g., `Worker`, `Manager`)
+- Adding a method to an interface forces changes across many unrelated classes
+
+---
 
 ### ❌ Bad Example — Violating ISP
 
-```python
-from abc import ABC, abstractmethod
+```java
+// A "fat" interface that tries to do everything
+public interface Worker {
+    void work();
+    void eat();
+    void sleep();
+    void attendMeeting();
+    void writeCode();
+    void designUI();
+}
 
-# A "fat" interface that tries to describe all possible workers
-class Worker(ABC):
-    @abstractmethod
-    def work(self):
-        pass
+// A Developer has to implement ALL methods
+public class Developer implements Worker {
+    public void work()          { System.out.println("Developer working..."); }
+    public void eat()           { System.out.println("Developer eating..."); }
+    public void sleep()         { System.out.println("Developer sleeping..."); }
+    public void attendMeeting() { System.out.println("Attending standup..."); }
+    public void writeCode()     { System.out.println("Writing Java code..."); }
+    public void designUI()      {
+        // A backend developer doesn't design UI!
+        throw new UnsupportedOperationException("Not my job!"); // BAD!
+    }
+}
 
-    @abstractmethod
-    def eat(self):
-        pass
-
-    @abstractmethod
-    def sleep(self):
-        pass
-
-    @abstractmethod
-    def attend_meeting(self):
-        pass
-
-
-class HumanEmployee(Worker):
-    def work(self):
-        print("Human is working...")
-
-    def eat(self):
-        print("Human is eating lunch...")
-
-    def sleep(self):
-        print("Human is sleeping...")
-
-    def attend_meeting(self):
-        print("Human is in a meeting...")
-
-
-class Robot(Worker):
-    def work(self):
-        print("Robot is working...")
-
-    def eat(self):
-        # Robots don't eat! Forced to implement a meaningless method.
-        raise NotImplementedError("Robots don't eat!")
-
-    def sleep(self):
-        # Robots don't sleep! Another meaningless method.
-        raise NotImplementedError("Robots don't sleep!")
-
-    def attend_meeting(self):
-        # Robots don't attend meetings! (Usually)
-        raise NotImplementedError("Robots don't attend meetings!")
+// A Robot worker doesn't eat or sleep but is forced to implement it!
+public class RobotWorker implements Worker {
+    public void work()          { System.out.println("Robot working 24/7..."); }
+    public void eat()           { throw new UnsupportedOperationException("Robots don't eat!"); }
+    public void sleep()         { throw new UnsupportedOperationException("Robots don't sleep!"); }
+    public void attendMeeting() { throw new UnsupportedOperationException("Robots don't meet!"); }
+    public void writeCode()     { System.out.println("Robot generating code..."); }
+    public void designUI()      { System.out.println("Robot designing UI..."); }
+}
 ```
-
-**Problems:**
-- `Robot` is forced to implement `eat()`, `sleep()`, and `attend_meeting()` which make no sense
-- `NotImplementedError` at runtime instead of a compile-time/static check
-- Any code calling `worker.eat()` must know whether it's dealing with a `Robot` or a `Human` — coupling!
-
-### ✅ Good Example — Following ISP
-
-```python
-from abc import ABC, abstractmethod
-
-# Segregated, focused interfaces
-class Workable(ABC):
-    @abstractmethod
-    def work(self):
-        pass
-
-
-class Eatable(ABC):
-    @abstractmethod
-    def eat(self):
-        pass
-
-
-class Sleepable(ABC):
-    @abstractmethod
-    def sleep(self):
-        pass
-
-
-class MeetingAttendable(ABC):
-    @abstractmethod
-    def attend_meeting(self):
-        pass
-
-
-# Human implements ALL the interfaces it genuinely supports
-class HumanEmployee(Workable, Eatable, Sleepable, MeetingAttendable):
-    def work(self):
-        print("Human is working...")
-
-    def eat(self):
-        print("Human is eating lunch...")
-
-    def sleep(self):
-        print("Human is sleeping...")
-
-    def attend_meeting(self):
-        print("Human is in a meeting...")
-
-
-# Robot only implements what it genuinely supports
-class Robot(Workable):
-    def work(self):
-        print("Robot is working 24/7...")
-
-
-# Functions depend only on the interface they need
-def start_work_shift(worker: Workable):
-    worker.work()
-
-def schedule_lunch(entity: Eatable):
-    entity.eat()
-
-
-human = HumanEmployee()
-robot = Robot()
-
-start_work_shift(human)  # ✅
-start_work_shift(robot)  # ✅
-
-schedule_lunch(human)    # ✅
-# schedule_lunch(robot)  # ❌ Type error at compile time — robot is not Eatable
-```
-
-**Benefits:**
-- `Robot` is never forced to implement `eat()` or `sleep()`
-- Type errors are caught early by type checkers (mypy, pyright)
-- Code is easier to read: if a function takes `Eatable`, you immediately know it eats things
 
 ---
 
-## D — Dependency Inversion Principle (DIP)
+### ✅ Good Example — Following ISP
+
+```java
+// Segregated, focused interfaces
+public interface Workable {
+    void work();
+}
+
+public interface Eatable {
+    void eat();
+}
+
+public interface Sleepable {
+    void sleep();
+}
+
+public interface Codeable {
+    void writeCode();
+}
+
+public interface UIDesignable {
+    void designUI();
+}
+
+// Backend Developer: only implements what's relevant
+public class BackendDeveloper implements Workable, Eatable, Sleepable, Codeable {
+    public void work()      { System.out.println("Backend developer working..."); }
+    public void eat()       { System.out.println("Eating lunch at desk..."); }
+    public void sleep()     { System.out.println("Getting 8 hours of sleep..."); }
+    public void writeCode() { System.out.println("Writing Spring Boot APIs..."); }
+}
+
+// UI Designer: only implements what's relevant
+public class UIDesigner implements Workable, Eatable, Sleepable, UIDesignable {
+    public void work()     { System.out.println("UI designer working..."); }
+    public void eat()      { System.out.println("Eating at the cafeteria..."); }
+    public void sleep()    { System.out.println("Sleeping..."); }
+    public void designUI() { System.out.println("Designing Figma mockups..."); }
+}
+
+// Robot: only implements what it actually does
+public class RobotWorker implements Workable, Codeable, UIDesignable {
+    public void work()     { System.out.println("Robot working non-stop..."); }
+    public void writeCode(){ System.out.println("Robot auto-generating code..."); }
+    public void designUI() { System.out.println("Robot generating UI layouts..."); }
+    // No eat(), no sleep() — clean and honest!
+}
+```
+
+---
+
+## 5. Dependency Inversion Principle (DIP)
 
 ### Theory
 
-> *"High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details. Details should depend on abstractions."*
+> **"High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details. Details should depend on abstractions."**
 > — Robert C. Martin
 
-This is perhaps the most powerful SOLID principle. Let's unpack it:
+This principle has two key rules:
+1. **High-level modules** (business logic) should not import **low-level modules** (DB, email, file system) directly
+2. Both should depend on **interfaces/abstractions**, not concrete implementations
 
-- **High-level modules** contain business logic (e.g., `OrderService`)
-- **Low-level modules** contain implementation details (e.g., `MySQLDatabase`, `SendGridMailer`)
-- **Abstractions** are interfaces/abstract classes that define a contract
+**Why it matters:**
+- Decouples business logic from infrastructure concerns
+- Makes the system easy to test (swap real DB with mock)
+- Makes switching implementations trivial (e.g., MySQL → MongoDB)
+- Aligns with the architecture of clean/hexagonal architecture
 
-Without DIP, high-level business logic is tightly coupled to low-level infrastructure. Changing your database from MySQL to PostgreSQL means rewriting your `OrderService`. That's fragile.
+**Signs of DIP violation:**
+- A service class directly instantiates a repository: `new UserRepository()`
+- Business logic imports low-level classes directly
+- Changing a DB requires modifying business logic classes
 
-With DIP, `OrderService` depends on an `IDatabase` interface. MySQL and PostgreSQL are just *implementations* of that interface. You can swap them without touching business logic at all.
-
-**DIP enables Dependency Injection (DI):** Instead of a class creating its dependencies, dependencies are *injected* from the outside. This makes classes independently testable.
+---
 
 ### ❌ Bad Example — Violating DIP
 
-```python
-class MySQLDatabase:
-    def save(self, data: dict):
-        print(f"Saving {data} to MySQL...")
+```java
+// Low-level module
+public class MySQLDatabase {
+    public void save(String data) {
+        System.out.println("Saving to MySQL: " + data);
+    }
+}
 
-    def find(self, query: str):
-        print(f"Querying MySQL: {query}")
-        return {"id": 1, "name": "Alice"}
+// High-level module directly depends on a concrete low-level class — VIOLATION!
+public class OrderService {
+    private MySQLDatabase database; // Tightly coupled to MySQL!
 
+    public OrderService() {
+        this.database = new MySQLDatabase(); // High-level creates low-level — BAD!
+    }
 
-class SendGridMailer:
-    def send(self, to: str, subject: str, body: str):
-        print(f"Sending email via SendGrid to {to}: {subject}")
-
-
-class OrderService:
-    """
-    High-level business logic is DIRECTLY coupled to low-level details.
-    OrderService creates its own dependencies — it's in charge of HOW
-    data is saved and HOW emails are sent.
-    """
-    def __init__(self):
-        # Hard dependency on concrete implementations!
-        self.db = MySQLDatabase()
-        self.mailer = SendGridMailer()
-
-    def place_order(self, order: dict):
-        # Business logic mixed with infrastructure concerns
-        self.db.save(order)
-        self.mailer.send(
-            order["customer_email"],
-            "Order Confirmed",
-            f"Your order #{order['id']} has been placed."
-        )
-        print("Order placed successfully.")
+    public void placeOrder(String orderDetails) {
+        System.out.println("Processing order: " + orderDetails);
+        database.save(orderDetails); // Can't swap to MongoDB without changing this class!
+    }
+}
 ```
 
-**Problems:**
-- Impossible to unit test `OrderService` without a real MySQL and SendGrid connection
-- Switching to PostgreSQL requires editing `OrderService` — a high-level module
-- `OrderService` and `MySQLDatabase` are inseparably coupled
+---
 
 ### ✅ Good Example — Following DIP
 
-```python
-from abc import ABC, abstractmethod
+```java
+// Abstraction: the contract both sides depend on
+public interface Database {
+    void save(String data);
+}
 
-# Abstractions (the "contracts")
-class IDatabase(ABC):
-    @abstractmethod
-    def save(self, data: dict):
-        pass
+// Low-level module 1: implements the abstraction
+public class MySQLDatabase implements Database {
+    @Override
+    public void save(String data) {
+        System.out.println("Saving to MySQL: " + data);
+    }
+}
 
-    @abstractmethod
-    def find(self, query: str) -> dict:
-        pass
+// Low-level module 2: another implementation
+public class MongoDatabase implements Database {
+    @Override
+    public void save(String data) {
+        System.out.println("Saving to MongoDB: " + data);
+    }
+}
 
+// Mock for testing: yet another implementation
+public class MockDatabase implements Database {
+    @Override
+    public void save(String data) {
+        System.out.println("[TEST] Mock save: " + data);
+    }
+}
 
-class IMailer(ABC):
-    @abstractmethod
-    def send(self, to: str, subject: str, body: str):
-        pass
+// High-level module: depends on abstraction, NOT on a concrete class
+public class OrderService {
+    private final Database database; // Depends on interface!
 
+    // Dependency is INJECTED from outside (Dependency Injection)
+    public OrderService(Database database) {
+        this.database = database;
+    }
 
-# Low-level implementations depend on the abstractions (they implement them)
-class MySQLDatabase(IDatabase):
-    def save(self, data: dict):
-        print(f"Saving {data} to MySQL...")
+    public void placeOrder(String orderDetails) {
+        System.out.println("Processing order: " + orderDetails);
+        database.save(orderDetails);
+    }
+}
 
-    def find(self, query: str) -> dict:
-        print(f"Querying MySQL: {query}")
-        return {"id": 1, "name": "Alice"}
+// Usage: You can swap any implementation with zero changes to OrderService
+public class Main {
+    public static void main(String[] args) {
+        // Production: use MySQL
+        OrderService prodService = new OrderService(new MySQLDatabase());
+        prodService.placeOrder("Order #1001");
 
+        // Migrate to MongoDB: just swap here
+        OrderService mongoService = new OrderService(new MongoDatabase());
+        mongoService.placeOrder("Order #1002");
 
-class PostgreSQLDatabase(IDatabase):
-    def save(self, data: dict):
-        print(f"Saving {data} to PostgreSQL...")
-
-    def find(self, query: str) -> dict:
-        print(f"Querying PostgreSQL: {query}")
-        return {"id": 1, "name": "Alice"}
-
-
-class SendGridMailer(IMailer):
-    def send(self, to: str, subject: str, body: str):
-        print(f"Sending via SendGrid to {to}: {subject}")
-
-
-class SMTPMailer(IMailer):
-    def send(self, to: str, subject: str, body: str):
-        print(f"Sending via SMTP to {to}: {subject}")
-
-
-# For testing — a mock implementation!
-class MockMailer(IMailer):
-    def __init__(self):
-        self.sent_emails = []
-
-    def send(self, to: str, subject: str, body: str):
-        self.sent_emails.append({"to": to, "subject": subject})
-
-
-# High-level module depends only on abstractions — injected from outside
-class OrderService:
-    def __init__(self, db: IDatabase, mailer: IMailer):
-        self.db = db
-        self.mailer = mailer
-
-    def place_order(self, order: dict):
-        self.db.save(order)
-        self.mailer.send(
-            order["customer_email"],
-            "Order Confirmed",
-            f"Your order #{order['id']} has been placed."
-        )
-        print("Order placed successfully.")
-
-
-# --- Production usage ---
-service = OrderService(
-    db=PostgreSQLDatabase(),    # Swap MySQL → PostgreSQL with zero code change in OrderService
-    mailer=SendGridMailer()
-)
-service.place_order({"id": 42, "customer_email": "alice@example.com"})
-
-
-# --- Testing with mocks --- (No real DB or email needed!)
-mock_mailer = MockMailer()
-test_db = PostgreSQLDatabase()  # or an InMemoryDatabase mock
-test_service = OrderService(db=test_db, mailer=mock_mailer)
-test_service.place_order({"id": 42, "customer_email": "test@example.com"})
-
-assert len(mock_mailer.sent_emails) == 1
-assert mock_mailer.sent_emails[0]["to"] == "test@example.com"
-print("✅ Test passed!")
+        // Testing: use mock
+        OrderService testService = new OrderService(new MockDatabase());
+        testService.placeOrder("Order #TEST");
+    }
+}
 ```
 
-**Benefits:**
-- `OrderService` is 100% testable in isolation with mock objects
-- You can swap `MySQLDatabase` for `PostgreSQLDatabase` in one line
-- Business logic and infrastructure concerns are cleanly separated
+---
+
+## Software Design Principles
 
 ---
 
@@ -739,128 +688,157 @@ print("✅ Test passed!")
 
 ### Theory
 
-> *"Every piece of knowledge must have a single, unambiguous, authoritative representation within a system."*
-> — Andrew Hunt & David Thomas, *The Pragmatic Programmer* (1999)
+> **"Every piece of knowledge must have a single, unambiguous, authoritative representation within a system."**
+> — Andrew Hunt & David Thomas, *The Pragmatic Programmer*
 
-DRY is one of the most fundamental principles in software development. It states that **logic, data, or knowledge should never be duplicated** in a codebase.
+DRY means: **do not write the same logic in more than one place**. Duplication is the root cause of many bugs — when you need to change something, you have to find and update every copy. Miss one, and you have a bug.
 
-**DRY is about knowledge, not just code.** Two identical code snippets that represent *different* concepts are not a DRY violation. But two pieces of code that represent the *same business rule* — even if they look different — are a violation.
+**DRY is about knowledge, not just code:**
+- Duplicated logic → extract into a method or class
+- Duplicated configuration → use constants
+- Duplicated structure → use generics or templates
+- Duplicated documentation → write it once and reference it
 
-**Symptoms of DRY violations:**
-- "Copy-paste programming" — copying code and adjusting slightly
-- The same validation logic appearing in multiple controllers
-- Magic numbers or strings appearing in multiple places
-- Updating one thing requires searching and updating many files
+**When DRY can go too far:**
+- Don't over-abstract unrelated code just because it looks similar today
+- Two pieces of code that do similar things for different reasons should stay separate (see YAGNI)
 
-**When DRY is misapplied (over-DRY):**
-Sometimes developers abstract things together too eagerly. If two pieces of code happen to look the same but represent *independent concepts*, merging them creates **accidental coupling**. Rule of thumb: apply DRY after you see something repeated **three times**, not just twice.
+---
 
 ### ❌ Bad Example — Violating DRY
 
-```python
-# Each function duplicates the same validation and calculation logic
-def calculate_employee_tax(salary: float, age: int) -> float:
-    # Validation duplicated
-    if salary <= 0:
-        raise ValueError("Salary must be positive")
-    if age < 18 or age > 70:
-        raise ValueError("Age must be between 18 and 70")
+```java
+public class ReportGenerator {
 
-    # Tax calculation duplicated across functions
-    if salary < 30000:
-        tax_rate = 0.10
-    elif salary < 60000:
-        tax_rate = 0.20
-    else:
-        tax_rate = 0.30
+    public void generateSalesReport(List<Double> sales) {
+        // Validation logic duplicated
+        if (sales == null || sales.isEmpty()) {
+            System.out.println("No data available.");
+            return;
+        }
+        double total = 0;
+        for (double sale : sales) total += sale;
+        double average = total / sales.size();
+        System.out.println("=== Sales Report ===");
+        System.out.println("Total: " + total);
+        System.out.println("Average: " + average);
+    }
 
-    return salary * tax_rate
+    public void generateExpenseReport(List<Double> expenses) {
+        // SAME validation logic duplicated again!
+        if (expenses == null || expenses.isEmpty()) {
+            System.out.println("No data available.");
+            return;
+        }
+        // SAME calculation logic duplicated!
+        double total = 0;
+        for (double expense : expenses) total += expense;
+        double average = total / expenses.size();
+        System.out.println("=== Expense Report ===");
+        System.out.println("Total: " + total);
+        System.out.println("Average: " + average);
+    }
 
-
-def calculate_contractor_tax(salary: float, age: int) -> float:
-    # Exact same validation — duplicated!
-    if salary <= 0:
-        raise ValueError("Salary must be positive")
-    if age < 18 or age > 70:
-        raise ValueError("Age must be between 18 and 70")
-
-    # Exact same tax bracket logic — duplicated!
-    if salary < 30000:
-        tax_rate = 0.10
-    elif salary < 60000:
-        tax_rate = 0.20
-    else:
-        tax_rate = 0.30
-
-    # Contractors get an additional 5% self-employment tax
-    return salary * (tax_rate + 0.05)
-
-
-def calculate_freelancer_tax(salary: float, age: int) -> float:
-    # Duplicated a third time!
-    if salary <= 0:
-        raise ValueError("Salary must be positive")
-    if age < 18 or age > 70:
-        raise ValueError("Age must be between 18 and 70")
-
-    if salary < 30000:
-        tax_rate = 0.10
-    elif salary < 60000:
-        tax_rate = 0.20
-    else:
-        tax_rate = 0.30
-
-    return salary * (tax_rate + 0.08)
+    public void generateInventoryReport(List<Double> values) {
+        // SAME validation and calculation — THIRD COPY!
+        if (values == null || values.isEmpty()) {
+            System.out.println("No data available.");
+            return;
+        }
+        double total = 0;
+        for (double value : values) total += value;
+        double average = total / values.size();
+        System.out.println("=== Inventory Report ===");
+        System.out.println("Total: " + total);
+        System.out.println("Average: " + average);
+    }
+}
 ```
 
-**Problems:**
-- If the tax bracket thresholds change (30000 → 35000), you must update 3 places
-- If the validation logic changes (age limit → 65), you must hunt down all copies
-- Bug in validation? It exists in 3 places
+---
 
 ### ✅ Good Example — Following DRY
 
-```python
-def validate_payroll_inputs(salary: float, age: int):
-    """Single source of truth for validation."""
-    if salary <= 0:
-        raise ValueError("Salary must be positive")
-    if age < 18 or age > 70:
-        raise ValueError("Age must be between 18 and 70")
+```java
+public class ReportGenerator {
 
+    // Single source of truth for validation
+    private boolean isValidData(List<Double> data) {
+        return data != null && !data.isEmpty();
+    }
 
-def get_base_tax_rate(salary: float) -> float:
-    """Single source of truth for tax brackets."""
-    if salary < 30000:
-        return 0.10
-    elif salary < 60000:
-        return 0.20
-    else:
-        return 0.30
+    // Single source of truth for calculation
+    private double calculateTotal(List<Double> data) {
+        return data.stream().mapToDouble(Double::doubleValue).sum();
+    }
 
+    private double calculateAverage(List<Double> data) {
+        return calculateTotal(data) / data.size();
+    }
 
-def calculate_tax(salary: float, age: int, additional_rate: float = 0.0) -> float:
-    """Shared calculation logic. Each worker type only specifies what's unique."""
-    validate_payroll_inputs(salary, age)
-    base_rate = get_base_tax_rate(salary)
-    return salary * (base_rate + additional_rate)
+    // Single source of truth for report printing
+    private void printReport(String title, List<Double> data) {
+        if (!isValidData(data)) {
+            System.out.println("No data available.");
+            return;
+        }
+        System.out.println("=== " + title + " ===");
+        System.out.println("Total: "   + calculateTotal(data));
+        System.out.println("Average: " + calculateAverage(data));
+    }
 
-
-# Each function is now concise, unique, and readable
-def calculate_employee_tax(salary: float, age: int) -> float:
-    return calculate_tax(salary, age)  # No additional rate
-
-def calculate_contractor_tax(salary: float, age: int) -> float:
-    return calculate_tax(salary, age, additional_rate=0.05)
-
-def calculate_freelancer_tax(salary: float, age: int) -> float:
-    return calculate_tax(salary, age, additional_rate=0.08)
+    public void generateSalesReport(List<Double> sales)         { printReport("Sales Report",     sales);    }
+    public void generateExpenseReport(List<Double> expenses)    { printReport("Expense Report",   expenses); }
+    public void generateInventoryReport(List<Double> values)    { printReport("Inventory Report", values);   }
+}
 ```
 
-**Benefits:**
-- Changing the 30000 bracket threshold requires editing exactly ONE line
-- Validation logic lives in one place — one fix fixes all
-- Intent is clearer: you can immediately see that contractors pay 5% extra
+**Now if the calculation logic or validation changes, you update it in ONE place.**
+
+---
+
+### DRY with Constants
+
+```java
+// BAD: Magic numbers scattered everywhere
+public class OrderValidator {
+    public boolean isValidOrder(int quantity, double price) {
+        return quantity > 0 && quantity <= 1000 && price >= 0.01 && price <= 99999.99;
+    }
+}
+
+public class CartValidator {
+    public boolean isValidCart(int itemCount, double totalPrice) {
+        return itemCount > 0 && itemCount <= 1000 && totalPrice >= 0.01; // 1000 and 0.01 again!
+    }
+}
+
+// GOOD: Constants defined once
+public final class BusinessConstants {
+    public static final int    MAX_QUANTITY = 1000;
+    public static final double MIN_PRICE    = 0.01;
+    public static final double MAX_PRICE    = 99999.99;
+
+    private BusinessConstants() {} // Prevent instantiation
+}
+
+public class OrderValidator {
+    public boolean isValidOrder(int quantity, double price) {
+        return quantity > 0
+            && quantity <= BusinessConstants.MAX_QUANTITY
+            && price   >= BusinessConstants.MIN_PRICE
+            && price   <= BusinessConstants.MAX_PRICE;
+    }
+}
+
+public class CartValidator {
+    public boolean isValidCart(int itemCount, double totalPrice) {
+        return itemCount   > 0
+            && itemCount   <= BusinessConstants.MAX_QUANTITY
+            && totalPrice  >= BusinessConstants.MIN_PRICE;
+    }
+}
+```
 
 ---
 
@@ -868,106 +846,118 @@ def calculate_freelancer_tax(salary: float, age: int) -> float:
 
 ### Theory
 
-> *"Simplicity is the ultimate sophistication."*
-> — Leonardo da Vinci
+> **"Simplicity is the ultimate sophistication."**
+> — Leonardo da Vinci (often applied in software engineering)
 
-The KISS principle, coined in the U.S. Navy in 1960, states that **most systems work best when kept simple rather than made complicated**. Unnecessary complexity is a liability — it increases the chance of bugs, makes onboarding harder, and slows down development.
+> **"Everything should be made as simple as possible, but not simpler."**
+> — Albert Einstein
 
-**KISS doesn't mean "write dumb code."** It means:
-- Prefer straightforward solutions over clever ones
-- Avoid premature optimization
-- Don't over-engineer before you understand the problem
-- Write code that the next developer can understand in 5 minutes
+KISS says: **don't over-engineer**. Most systems work best when they are kept simple rather than made complex. Complexity is the enemy of reliability, maintainability, and readability.
 
-**Signs you're violating KISS:**
-- You need to draw a diagram just to explain a single function
-- A new teammate says "what does this even do?"
-- You spent a day writing a "general solution" for a problem that only has one case
-- You're using advanced language features where simple ones would suffice
+**What KISS is NOT:**
+- It doesn't mean "write sloppy code"
+- It doesn't mean "avoid abstraction always"
+- It doesn't mean "use trivial solutions that don't scale"
+
+**KISS means:**
+- Prefer the simplest solution that solves the problem correctly
+- Avoid clever tricks that obscure intent
+- Write code for the next developer to read, not to impress
+
+---
 
 ### ❌ Bad Example — Violating KISS
 
-```python
-from functools import reduce
-from typing import Callable, List, Any
-import operator
+```java
+// Over-engineered: excessive abstraction, indirection, and complexity for a simple task
+public interface NumberTransformer<T, R> {
+    R transform(T input);
+}
 
-def over_engineered_sum(numbers: List[float]) -> float:
-    """
-    Someone tried to be extremely clever and "functional" here.
-    This is hard to read, debug, and offers zero benefits over the simple version.
-    """
-    pipeline: List[Callable[[List[float]], Any]] = [
-        lambda xs: filter(lambda x: isinstance(x, (int, float)), xs),
-        lambda xs: map(lambda x: float(x), xs),
-        lambda xs: reduce(operator.add, xs, 0.0)
-    ]
-    return reduce(lambda acc, fn: fn(acc), pipeline, numbers)
+public abstract class AbstractNumberProcessor<T extends Number> {
+    protected abstract NumberTransformer<T, String> getTransformerStrategy();
 
+    public String process(T number) {
+        return getTransformerStrategy().transform(number);
+    }
+}
 
-def complex_is_even(n: int) -> bool:
-    """Over-engineered even-number check using bit manipulation + ternary + lambda."""
-    check = lambda x: True if not (x & 1) else False
-    return check(n)
+public class ConcreteEvenOddProcessor extends AbstractNumberProcessor<Integer> {
+    @Override
+    protected NumberTransformer<Integer, String> getTransformerStrategy() {
+        return (number) -> {
+            if ((number & 1) == 0) { // Bitwise trick — clever but unclear
+                return "EVEN";
+            } else {
+                return "ODD";
+            }
+        };
+    }
+}
 
-
-def verbose_greet(name: str) -> str:
-    """
-    Overly complex string handling with multiple unnecessary intermediate steps.
-    """
-    chars = list(name)
-    stripped_chars = [c for c in chars if c.strip()]
-    capitalized = ''.join(
-        [c.upper() if i == 0 else c.lower() for i, c in enumerate(stripped_chars)]
-    )
-    greeting_components = ["Hello", ",", " ", capitalized, "!"]
-    return ''.join(greeting_components)
+// Usage: 3 classes just to check if a number is even or odd!
+public class Main {
+    public static void main(String[] args) {
+        AbstractNumberProcessor<Integer> processor = new ConcreteEvenOddProcessor();
+        System.out.println(processor.process(4)); // EVEN
+    }
+}
 ```
+
+---
 
 ### ✅ Good Example — Following KISS
 
-```python
-def calculate_sum(numbers: list) -> float:
-    """Clear, direct, and immediately understandable."""
-    return sum(x for x in numbers if isinstance(x, (int, float)))
+```java
+// Simple, clear, and direct — does exactly what it needs to
+public class NumberUtils {
+    public static String getParityLabel(int number) {
+        return (number % 2 == 0) ? "EVEN" : "ODD";
+    }
+}
 
-
-def is_even(n: int) -> bool:
-    """Anyone can read this. No need for bit manipulation."""
-    return n % 2 == 0
-
-
-def greet(name: str) -> str:
-    """Python's built-in string methods handle this perfectly."""
-    return f"Hello, {name.strip().capitalize()}!"
-
-
-# --- Another KISS example: parsing user input ---
-
-# ❌ COMPLEX (premature optimization)
-import re
-def parse_age_bad(input_str: str) -> int:
-    pattern = re.compile(r'^\s*(\+?(?:0|[1-9]\d{0,2}))\s*$')
-    match = pattern.fullmatch(input_str.strip())
-    if not match:
-        raise ValueError(f"Invalid age: {input_str!r}")
-    value = int(match.group(1))
-    if not (0 <= value <= 150):
-        raise ValueError(f"Age {value} out of range")
-    return value
-
-# ✅ SIMPLE
-def parse_age(input_str: str) -> int:
-    age = int(input_str.strip())
-    if not (0 <= age <= 150):
-        raise ValueError(f"Age {age} is out of range (0-150)")
-    return age
+// Usage: clean, readable, zero ceremony
+public class Main {
+    public static void main(String[] args) {
+        System.out.println(NumberUtils.getParityLabel(4)); // EVEN
+        System.out.println(NumberUtils.getParityLabel(7)); // ODD
+    }
+}
 ```
 
-**Benefits:**
-- Code is instantly readable by any developer, regardless of experience
-- Less code = fewer bugs
-- Easier to test, review, and modify
+---
+
+### Another KISS Example — Password Validation
+
+```java
+// BAD: Hard-to-read regex that nobody can maintain or debug
+public class PasswordValidator {
+    private static final String COMPLEXITY_PATTERN =
+        "^(?=(?:.*[A-Z]){1,})(?=(?:.*[a-z]){1,})(?=(?:.*\\d){1,})(?=(?:.*[!@#$%]){1,}).{8,}$";
+
+    public boolean validate(String password) {
+        return password != null && password.matches(COMPLEXITY_PATTERN);
+        // Changing one rule means rewriting the entire regex
+    }
+}
+
+// GOOD: Step-by-step validation — readable, debuggable, easy to extend
+public class PasswordValidator {
+
+    public boolean validate(String password) {
+        if (password == null || password.length() < 8) return false;
+
+        boolean hasUpperCase   = password.chars().anyMatch(Character::isUpperCase);
+        boolean hasLowerCase   = password.chars().anyMatch(Character::isLowerCase);
+        boolean hasDigit       = password.chars().anyMatch(Character::isDigit);
+        boolean hasSpecialChar = password.chars().anyMatch(c -> "!@#$%".indexOf(c) >= 0);
+
+        return hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar;
+    }
+}
+```
+
+**The second version is readable, easily debuggable, and simple to modify.**
 
 ---
 
@@ -975,267 +965,226 @@ def parse_age(input_str: str) -> int:
 
 ### Theory
 
-> *"Always implement things when you actually need them, never when you just foresee that you need them."*
+> **"Always implement things when you actually need them, never when you just foresee that you might need them."**
 > — Ron Jeffries, Extreme Programming
 
-YAGNI is a principle from Extreme Programming (XP) that warns against **speculative generality** — writing code for requirements that *might* appear in the future but don't exist today.
+YAGNI means: **don't write code for features you think you'll need in the future, but don't need right now**. Speculative code adds complexity without delivering value.
 
-**Why YAGNI violations are costly:**
-- You write code no one uses (wasted effort)
-- The future requirements may never come, or may look completely different
-- The speculative code becomes technical debt others must maintain
-- It adds complexity, which can hide bugs in the code you actually need
+**Why YAGNI matters:**
+- Unused code still needs to be read, tested, and maintained
+- Speculative features are often built wrong (requirements change)
+- It leads to bloated, confusing codebases
+- Time spent on future features is time NOT spent on current needs
 
-**YAGNI does NOT mean:**
-- Don't plan ahead at all
-- Don't write clean code
-- Don't refactor
+**YAGNI is different from DRY:**
+- DRY removes duplication of existing requirements
+- YAGNI avoids implementing requirements that don't exist yet
 
-It means: **solve today's problem with today's code**. When the new requirement arrives, refactor then — armed with real knowledge of what's needed.
+**When to apply YAGNI:**
+- Every time you think "I might need this later..."
+- When adding configuration options no one asked for
+- When building a plugin system before the first plugin exists
+
+---
 
 ### ❌ Bad Example — Violating YAGNI
 
-```python
-class UserService:
-    """
-    Developer thought: "We only need user creation today, but we might need
-    roles, permissions, 2FA, and OAuth someday. Let me build all that now."
-    
-    Result: 200 lines of code, most of which is never used.
-    """
+```java
+// Current requirement: store and retrieve user name and email.
+// But the developer builds for "future needs" nobody asked for!
+public class User {
+    private String name;
+    private String email;
 
-    SUPPORTED_OAUTH_PROVIDERS = ["google", "github", "facebook", "twitter", "apple"]
-    PERMISSION_LEVELS = {
-        "viewer": 0, "editor": 1, "manager": 2, "admin": 3, "superadmin": 4
+    // YAGNI violation: No one asked for multiple roles yet
+    private List<String> roles = new ArrayList<>();
+
+    // YAGNI violation: No one asked for OAuth integration yet
+    private String oauthProvider;
+    private String oauthToken;
+
+    // YAGNI violation: No one asked for audit trail
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
+
+    // YAGNI violation: Nobody needs export to CSV, XML, JSON all at once
+    public String toCsv() {
+        return name + "," + email;
     }
 
-    def __init__(self):
-        self.users = {}
-        self.roles = {}
-        self.permissions = {}
-        self.oauth_tokens = {}
-        self.two_factor_secrets = {}
-        self.audit_log = []
+    public String toXml() {
+        return "<user><name>" + name + "</name><email>" + email + "</email></user>";
+    }
 
-    def create_user(self, name: str, email: str,
-                    role: str = "viewer",
-                    oauth_provider: str = None,
-                    enable_2fa: bool = False) -> dict:
-        # The only current requirement is creating a user with name + email.
-        # All this extra logic is speculative.
-        user_id = len(self.users) + 1
-        user = {"id": user_id, "name": name, "email": email}
+    public String toJson() {
+        return "{\"name\":\"" + name + "\",\"email\":\"" + email + "\"}";
+    }
 
-        # Role system (not required yet)
-        if role not in self.PERMISSION_LEVELS:
-            raise ValueError(f"Invalid role: {role}")
-        user["role"] = role
-        user["permission_level"] = self.PERMISSION_LEVELS[role]
-
-        # OAuth (not required yet)
-        if oauth_provider:
-            if oauth_provider not in self.SUPPORTED_OAUTH_PROVIDERS:
-                raise ValueError(f"Unsupported OAuth provider: {oauth_provider}")
-            user["oauth_provider"] = oauth_provider
-
-        # 2FA (not required yet)
-        if enable_2fa:
-            import secrets
-            user["2fa_secret"] = secrets.token_hex(16)
-            self.two_factor_secrets[user_id] = user["2fa_secret"]
-
-        # Audit logging (not required yet)
-        self.audit_log.append({
-            "action": "create_user",
-            "user_id": user_id,
-            "timestamp": "2024-01-01T00:00:00"
-        })
-
-        self.users[user_id] = user
-        return user
-
-    def verify_2fa_token(self, user_id: int, token: str) -> bool:
-        # Nobody asked for this feature. Pure speculation.
-        secret = self.two_factor_secrets.get(user_id)
-        if not secret:
-            return False
-        return token == secret[:6]  # Oversimplified, but YAGNI-irrelevant
-
-    def grant_oauth_access(self, user_id: int, provider: str, token: str):
-        # Nobody asked for this either.
-        self.oauth_tokens[user_id] = {"provider": provider, "token": token}
+    // YAGNI violation: no requirement for multi-language support yet
+    public String getWelcomeMessage(String language) {
+        if (language.equals("en")) return "Welcome, " + name;
+        if (language.equals("es")) return "Bienvenido, " + name;
+        if (language.equals("fr")) return "Bienvenue, " + name;
+        return "Welcome, " + name;
+    }
+}
 ```
+
+---
 
 ### ✅ Good Example — Following YAGNI
 
-```python
-class UserService:
-    """
-    Today's requirement: create users with name and email.
-    That's it. We build exactly that. Nothing more.
-    
-    When roles are needed → we add them.
-    When OAuth is needed → we add it.
-    By then, we'll know the REAL requirements.
-    """
+```java
+// Only build what's needed NOW.
+// Extend later when requirements are actually confirmed.
+public class User {
+    private String name;
+    private String email;
 
-    def __init__(self):
-        self.users = {}
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
 
-    def create_user(self, name: str, email: str) -> dict:
-        if not name or not email:
-            raise ValueError("Name and email are required")
-        if "@" not in email:
-            raise ValueError("Invalid email format")
+    public String getName()  { return name; }
+    public String getEmail() { return email; }
+}
 
-        user_id = len(self.users) + 1
-        user = {"id": user_id, "name": name, "email": email}
-        self.users[user_id] = user
-        return user
+// Later, when the requirement for roles actually arrives,
+// you add it — and you'll do it right because you know the real use case.
+public class User {
+    private String name;
+    private String email;
+    private List<String> roles; // Added ONLY when actually required
 
-    def get_user(self, user_id: int) -> dict:
-        if user_id not in self.users:
-            raise KeyError(f"User {user_id} not found")
-        return self.users[user_id]
-
-
-# When roles are needed LATER, we refactor:
-# class UserService:
-#     def create_user(self, name, email, role="viewer"):
-#         ...
-```
-
-**Benefits:**
-- The codebase only contains code that delivers value today
-- When real requirements arrive, you can design based on actual knowledge
-- Less code to test, review, and maintain right now
-
----
-
-## Principles Working Together
-
-The real power comes when these principles are applied together. Here's a real-world scenario:
-
-### Scenario: A payment processing system
-
-```python
-from abc import ABC, abstractmethod
-from typing import Protocol
-
-# ─── Abstractions (DIP + ISP) ───────────────────────────────
-class PaymentGateway(ABC):
-    """Interface for payment gateways (DIP)"""
-    @abstractmethod
-    def charge(self, amount: float, currency: str) -> dict:
-        pass
-
-class ReceiptSender(ABC):
-    """Separate interface for sending receipts (ISP — not all gateways send receipts)"""
-    @abstractmethod
-    def send_receipt(self, email: str, amount: float) -> None:
-        pass
-
-# ─── Implementations (OCP — add new gateways without modifying anything) ────
-class StripeGateway(PaymentGateway):
-    def charge(self, amount: float, currency: str) -> dict:
-        print(f"Charging ${amount} {currency} via Stripe")
-        return {"status": "success", "transaction_id": "stripe_txn_123"}
-
-class PayPalGateway(PaymentGateway):
-    def charge(self, amount: float, currency: str) -> dict:
-        print(f"Charging ${amount} {currency} via PayPal")
-        return {"status": "success", "transaction_id": "paypal_txn_456"}
-
-class EmailReceiptSender(ReceiptSender):
-    def send_receipt(self, email: str, amount: float) -> None:
-        print(f"Sending receipt for ${amount} to {email}")
-
-# ─── Shared validation (DRY) ───────────────────────────────
-def validate_payment(amount: float, currency: str) -> None:
-    """Single source of truth for payment validation."""
-    if amount <= 0:
-        raise ValueError("Payment amount must be positive")
-    if currency not in ("USD", "EUR", "GBP"):
-        raise ValueError(f"Unsupported currency: {currency}")
-
-# ─── Business Logic (SRP + DIP) ────────────────────────────
-class PaymentService:
-    """Only one responsibility: orchestrating a payment."""
-    def __init__(self, gateway: PaymentGateway, receipt_sender: ReceiptSender):
-        self.gateway = gateway
-        self.receipt_sender = receipt_sender
-
-    def process_payment(self, amount: float, currency: str, email: str) -> dict:
-        validate_payment(amount, currency)           # DRY: shared validation
-        result = self.gateway.charge(amount, currency)  # DIP: uses abstraction
-        self.receipt_sender.send_receipt(email, amount)
-        return result
-
-# ─── Simple, focused usage (KISS + YAGNI) ──────────────────
-service = PaymentService(
-    gateway=StripeGateway(),
-    receipt_sender=EmailReceiptSender()
-)
-result = service.process_payment(99.99, "USD", "customer@example.com")
-```
-
-**How all principles are present:**
-| Principle | Applied where |
-|-----------|---------------|
-| **SRP** | `PaymentService` only orchestrates; validation is separate |
-| **OCP** | New gateways (Apple Pay, etc.) added without changing `PaymentService` |
-| **LSP** | Any `PaymentGateway` works wherever another is expected |
-| **ISP** | `ReceiptSender` is separate from `PaymentGateway` |
-| **DIP** | `PaymentService` depends on abstractions, not `StripeGateway` directly |
-| **DRY** | `validate_payment` is one function, not copied into each gateway |
-| **KISS** | Clean, minimal code — no speculative features |
-| **YAGNI** | No multi-currency conversion, no fraud detection — until needed |
-
----
-
-## Quick Reference Cheat Sheet
-
-```
-┌─────────┬────────────────────────────────────────┬─────────────────────────────────────┐
-│ Principle│ Core Question                          │ Violation Smell                     │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│   SRP   │ Does this class have ONE reason to     │ "God class" that does everything     │
-│         │ change?                                 │ Hard to name a class concisely       │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│   OCP   │ Can I add behavior without editing     │ Long if/elif chains on types         │
-│         │ existing code?                          │ "Open this class to add a feature"   │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│   LSP   │ Can I swap any subtype without         │ Subclass throws NotImplementedError  │
-│         │ breaking things?                        │ isinstance() checks in core logic    │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│   ISP   │ Do clients depend only on methods      │ Empty method implementations          │
-│         │ they actually use?                      │ Classes implementing methods they    │
-│         │                                         │ don't need                           │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│   DIP   │ Does high-level code depend on         │ new ConcreteClass() inside business  │
-│         │ abstractions, not concretions?          │ logic; untestable without real DBs   │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│   DRY   │ Is every piece of knowledge            │ Copy-paste code, magic numbers,      │
-│         │ represented exactly once?               │ same validation in 5 places          │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│  KISS   │ Is this the simplest solution that     │ Clever one-liners, unnecessary        │
-│         │ solves the problem?                     │ abstractions, regex for simple tasks │
-├─────────┼────────────────────────────────────────┼─────────────────────────────────────┤
-│  YAGNI  │ Is this code needed RIGHT NOW?         │ "We might need this later" features  │
-│         │                                         │ Unused parameters, dead code paths   │
-└─────────┴────────────────────────────────────────┴─────────────────────────────────────┘
+    // ...
+}
 ```
 
 ---
 
-## Further Reading
+### YAGNI in Architecture
 
-- 📖 **Clean Code** — Robert C. Martin
-- 📖 **The Pragmatic Programmer** — Andrew Hunt & David Thomas
-- 📖 **Design Patterns: Elements of Reusable Object-Oriented Software** — Gang of Four
-- 📖 **Refactoring** — Martin Fowler
-- 🌐 [SOLID Principles by Uncle Bob](https://blog.cleancoder.com)
+```java
+// BAD: Building a plugin system before the first plugin exists
+public interface Plugin {
+    void init(PluginContext context);
+    void execute(Map<String, Object> params);
+    void destroy();
+    String getName();
+    String getVersion();
+    List<String> getDependencies();
+}
+
+public class PluginRegistry {
+    private Map<String, Plugin> plugins = new HashMap<>();
+    // Complex registration, lifecycle management, dependency resolution...
+    // For a feature that hasn't been asked for!
+}
+
+// GOOD: Just solve today's problem simply
+public class DataProcessor {
+    public void process(List<String> data) {
+        // Direct implementation that works for the current use case
+        data.stream()
+            .filter(s -> !s.isEmpty())
+            .map(String::toUpperCase)
+            .forEach(System.out::println);
+    }
+}
+// Refactor into a plugin system WHEN multiple pluggable processors are actually needed.
+```
 
 ---
 
-*This guide is meant to be a living reference. Principles are tools, not laws — always apply judgment based on context.*
+## How These Principles Work Together
+
+These principles are complementary, not competing:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   SRP   ──► Each class does ONE thing well                      │
+│   OCP   ──► Add features WITHOUT changing existing code         │
+│   LSP   ──► Subtypes are safe substitutes for supertypes        │
+│   ISP   ──► Interfaces are lean and focused                     │
+│   DIP   ──► Depend on abstractions, not concretions             │
+│                                                                 │
+│   DRY   ──► No duplicated logic anywhere                        │
+│   KISS  ──► No unnecessary complexity                           │
+│   YAGNI ──► No speculative future features                      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**A real-world example combining all principles:**
+
+```java
+// SRP:   Each class has one job
+// DIP:   Depend on abstractions, not concretions
+// OCP:   Easy to add new notification channels without touching existing code
+// ISP:   NotificationSender is a small, focused interface
+// DRY:   Notification logic is in one place
+// KISS:  Design is straightforward
+// YAGNI: No extra features until they're requested
+
+public interface NotificationSender {          // ISP: focused interface
+    void send(String recipient, String message);
+}
+
+public class EmailSender implements NotificationSender {   // SRP: only sends email
+    @Override
+    public void send(String recipient, String message) {
+        System.out.println("Email to " + recipient + ": " + message);
+    }
+}
+
+public class SmsSender implements NotificationSender {     // OCP: new type, no old code changed
+    @Override
+    public void send(String recipient, String message) {
+        System.out.println("SMS to " + recipient + ": " + message);
+    }
+}
+
+public class NotificationService {                         // SRP: orchestrates notifications
+    private final NotificationSender sender;               // DIP: depends on abstraction
+
+    public NotificationService(NotificationSender sender) {
+        this.sender = sender;
+    }
+
+    public void notifyUser(String userId, String message) { // DRY: single place for notify logic
+        String recipient = resolveRecipient(userId);
+        sender.send(recipient, message);                    // KISS: simple and direct
+    }
+
+    private String resolveRecipient(String userId) {
+        return userId + "@example.com";                     // YAGNI: no complex lookup until needed
+    }
+}
+```
+
+---
+
+## Summary Cheat Sheet
+
+| Principle | One-Line Question to Ask | How to Fix |
+|-----------|--------------------------|------------|
+| **SRP** | Does this class have more than one reason to change? | Split into focused classes |
+| **OCP** | Do I need to modify existing code to add a new feature? | Use abstractions and polymorphism |
+| **LSP** | Can I replace a parent class with its child without breaking things? | Fix inheritance hierarchy or use composition |
+| **ISP** | Is a class forced to implement methods it doesn't need? | Split the fat interface into smaller ones |
+| **DIP** | Does high-level code directly depend on low-level code? | Introduce an interface; inject dependencies |
+| **DRY** | Is the same logic written in more than one place? | Extract to a shared method, class, or constant |
+| **KISS** | Is this solution more complex than the problem requires? | Simplify; favor clarity over cleverness |
+| **YAGNI** | Am I building something nobody asked for yet? | Delete it; add it when the requirement arrives |
+
+---
+
+> 💡 **Final Thought:** These principles exist to serve you — not to be followed blindly. The goal is **clean, maintainable, understandable code** that solves real problems. Apply these principles with judgment, and they will serve you well throughout your entire software engineering career.
+
+---
+
+*Written with ❤️ for Java developers who care about code quality.*
